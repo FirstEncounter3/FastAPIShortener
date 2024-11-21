@@ -31,17 +31,8 @@ def get_short_url(id: str):
 
 @app.get("/stats/{id}")
 def get_stats_url(id: str):
-    url_data = get_object_from_db(id)
-    return {
-        "id": url_data.id,
-        "original_url": url_data.original_url,
-        "short_url": url_data.short_url,
-        "created_at": url_data.created_at,
-        "clicks": url_data.clicks,
-        "utm_source": url_data.utm_source,
-        "utm_medium": url_data.utm_medium,
-        "utm_campaign": url_data.utm_campaign,
-    }
+    return get_object_from_db(id)
+
 
 
 @app.get("/all")

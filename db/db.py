@@ -1,10 +1,10 @@
 import datetime
-import uuid
 
 from fastapi import HTTPException
 
 from models.models import OriginalUrl, RecordUrl
 from settings.settings import HOSTNAME
+from random_ids.random_ids import create_unique_id
 
 
 db_shorten_urls = {}
@@ -20,7 +20,7 @@ def create_object_in_db(
         if record.original_url == url.url:
             return record.short_url
     
-    id = uuid.uuid4().hex
+    id = create_unique_id()
     created_at = datetime.datetime.now()
     short_url = f"{HOSTNAME}/short/{id}"
 

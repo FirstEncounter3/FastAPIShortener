@@ -22,7 +22,7 @@ def create_object_in_db(
     
     id = create_unique_id()
     created_at = datetime.datetime.now()
-    short_url = f"{HOSTNAME}/short/{id}"
+    short_url = f"{HOSTNAME}{id}"
 
     db_shorten_urls[id] = RecordUrl(
         id=id, 

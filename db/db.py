@@ -16,9 +16,6 @@ def create_object_in_db(
     utm_medium: str = None,
     utm_campaign: str = None,
 ) -> str:
-    for record in db_shorten_urls.values():
-        if record.original_url == url.url:
-            return record.short_url
     
     id = create_unique_id()
     created_at = datetime.datetime.now()

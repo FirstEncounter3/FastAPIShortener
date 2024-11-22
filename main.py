@@ -4,6 +4,8 @@ from fastapi.responses import RedirectResponse
 from models.models import OriginalUrl
 from db.db import create_object_in_db, get_object_from_db, get_all_objects_from_db
 
+from settings.settings import DEBUG
+
 app = FastAPI()
 
 
@@ -22,7 +24,7 @@ def create_short_url(
     )
 
 
-@app.get("/short/{id}")
+@app.get("/{id}")
 def get_short_url(id: str):
     url_data = get_object_from_db(id)
     url_data.clicks += 1
@@ -34,7 +36,7 @@ def get_stats_url(id: str):
     return get_object_from_db(id)
 
 
-
-@app.get("/all")
-def get_all_urls():
-    return get_all_objects_from_db()
+if DEBUG:
+    @app.get("/urls/all")
+    def get_all_urls():
+        return get_all_objects_from_db()

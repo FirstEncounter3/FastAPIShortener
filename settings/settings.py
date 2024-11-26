@@ -3,3 +3,4 @@
 
 HOSTNAME = "http://localhost:8000/"
 DEBUG = True
+MONGO_HOST = "mongodb://localhost:27017/"

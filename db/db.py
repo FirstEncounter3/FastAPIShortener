@@ -21,12 +21,12 @@ async def create_object_in_db_mongo(url: OriginalUrl, url_collection) -> str:
     id = create_unique_id()
     created_at = datetime.datetime.now()
     short_url = f"{HOSTNAME}{id}"
-    url = str(url.url)
+    original_url = str(url.url)
     
     try:
         record = RecordUrl(
             id=id,
-            original_url=url,
+            original_url=original_url,
             short_url=short_url,
             created_at=created_at,
             clicks=0,

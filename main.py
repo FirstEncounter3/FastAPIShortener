@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Query, Path, Body
+from fastapi import FastAPI, Request, Path, Body
 from fastapi.responses import RedirectResponse
 
-from models.models import OriginalUrl, RecordUrl
+from models.models import OriginalUrl, RecordUrl, Utm
 from db.db import (
     init_db,
     create_object_in_db_mongo,
@@ -25,9 +25,11 @@ async def create_short_url(
 
 @app.get("/{id}")
 async def get_short_url(
+    request: Request,
     id: str = Path(..., description="The ID of the short URL")
 ) -> RedirectResponse:
     url_data = await get_object_from_db_mongo(id, url_collection)
+    query_params = request.query_params
     await increase_the_number_of_clicks(id, url_collection)
     return RedirectResponse(url=url_data.original_url)
 

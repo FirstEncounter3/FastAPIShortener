@@ -9,9 +9,9 @@ from settings.settings import HOSTNAME, MONGO_HOST
 from random_ids.random_ids import create_unique_id
 
 
-def init_db():
+def init_db(db_name):
     client = AsyncIOMotorClient(MONGO_HOST)
-    database = client.shortener
+    database = client[db_name]
     url_collection = database.get_collection("urls")
 
     return url_collection

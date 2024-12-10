@@ -13,7 +13,7 @@ from db.db import (
 from settings.settings import DEBUG
 
 app = FastAPI()
-url_collection = init_db()
+url_collection = init_db('shortener')
 
 
 @app.post("/shorten", response_model=str)

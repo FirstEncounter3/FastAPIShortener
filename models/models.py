@@ -16,13 +16,10 @@ class RecordUrl(BaseModel):
     utm_source: Optional[str] = None
     utm_medium: Optional[str] = None
     utm_campaign: Optional[str] = None
-    utm_term: Optional[str] = None
-    utm_content: Optional[str] = None 
 
 
 class Utm(BaseModel):
     utm_source: Optional[str] = None
     utm_medium: Optional[str] = None
     utm_campaign: Optional[str] = None
-    utm_term: Optional[str] = None
-    utm_content: Optional[str] = None
+    

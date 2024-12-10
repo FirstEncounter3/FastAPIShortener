@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.exceptions import HTTPException
 
 from models.models import OriginalUrl, RecordUrl, Utm
+from exceptions.exceptions import DatabaseError, UrlNotFound
 from db.db import (
     init_db,
     create_object_in_db_mongo,

@@ -1,12 +1,12 @@
 import datetime
 
-from fastapi import HTTPException
 from pydantic import ValidationError
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from models.models import OriginalUrl, RecordUrl
 from settings.settings import HOSTNAME, MONGO_HOST
 from random_ids.random_ids import create_unique_id
+from exceptions.exceptions import DatabaseError, UrlNotFound
 
 
 def init_db(db_name):
@@ -22,7 +22,7 @@ async def create_object_in_db_mongo(url: OriginalUrl, url_collection) -> str:
     created_at = datetime.datetime.now()
     short_url = f"{HOSTNAME}{id}"
     original_url = str(url.url)
-    
+
     try:
         record = RecordUrl(
             id=id,
@@ -32,7 +32,7 @@ async def create_object_in_db_mongo(url: OriginalUrl, url_collection) -> str:
             clicks=0,
         )
     except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise DatabaseError(str(e))
 
     await url_collection.insert_one(record.model_dump())
 
@@ -45,7 +45,7 @@ async def get_object_from_db_mongo(id: str, url_collection) -> RecordUrl:
     if url_data:
         return RecordUrl(**url_data)
 
-    raise HTTPException(status_code=404, detail="URL not found")
+    raise UrlNotFound("The field for the specified ID was not found in the database")
 
 
 async def increase_the_number_of_clicks(id: str, url_collection) -> RecordUrl:
@@ -58,9 +58,8 @@ async def increase_the_number_of_clicks(id: str, url_collection) -> RecordUrl:
 
             return RecordUrl(**url_data)
         except ValidationError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-    raise HTTPException(status_code=404, detail="URL not found")
+            raise DatabaseError(str(e))
+    raise UrlNotFound("The field for the specified ID was not found in the database")
 
 
 async def get_all_objects_from_db_mongo(url_collection) -> list[RecordUrl]:

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Path, Body
 from fastapi.responses import RedirectResponse
+from fastapi.exceptions import HTTPException
 
 from models.models import OriginalUrl, RecordUrl, Utm
 from db.db import (
@@ -20,7 +21,10 @@ url_collection = init_db('shortener')
 async def create_short_url(
     url: OriginalUrl = Body(..., description="The original URL to shorten")
 ) -> str:
-    return await create_object_in_db_mongo(url, url_collection)
+    try:
+        return await create_object_in_db_mongo(url, url_collection)
+    except DatabaseError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/{id}")
@@ -28,9 +32,14 @@ async def get_short_url(
     request: Request,
     id: str = Path(..., description="The ID of the short URL")
 ) -> RedirectResponse:
-    url_data = await get_object_from_db_mongo(id, url_collection)
+    try:
+        url_data = await get_object_from_db_mongo(id, url_collection)
+    except UrlNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
     query_params = request.query_params
     await increase_the_number_of_clicks(id, url_collection)
+
     return RedirectResponse(url=url_data.original_url)
 
 
@@ -38,7 +47,10 @@ async def get_short_url(
 async def get_stats_url(
     id: str = Path(..., description="The ID of the short URL")
 ) -> RecordUrl:
-    return await get_object_from_db_mongo(id, url_collection)
+    try:
+        return await get_object_from_db_mongo(id, url_collection)
+    except UrlNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 if DEBUG:

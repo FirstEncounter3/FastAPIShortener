@@ -53,8 +53,7 @@ async def increase_the_number_of_clicks(id: str, url_collection) -> RecordUrl:
 
     if url_data:
         try:
-            clicks = url_data["clicks"] + 1
-            await url_collection.update_one({"id": id}, {"$set": {"clicks": clicks}})
+            await url_collection.update_one({"id": id}, {"$inc": {"clicks": 1}})
 
             return RecordUrl(**url_data)
         except ValidationError as e:

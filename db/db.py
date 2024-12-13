@@ -1,17 +1,17 @@
 import datetime
 
-from fastapi import HTTPException
 from pydantic import ValidationError
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from models.models import OriginalUrl, RecordUrl
+from models.models import OriginalUrl, RecordUrl, Utm
 from settings.settings import HOSTNAME, MONGO_HOST
 from random_ids.random_ids import create_unique_id
+from exceptions.exceptions import DatabaseError, UrlNotFound
 
 
-def init_db():
+def init_db(db_name):
     client = AsyncIOMotorClient(MONGO_HOST)
-    database = client.shortener
+    database = client[db_name]
     url_collection = database.get_collection("urls")
 
     return url_collection
@@ -22,7 +22,7 @@ async def create_object_in_db_mongo(url: OriginalUrl, url_collection) -> str:
     created_at = datetime.datetime.now()
     short_url = f"{HOSTNAME}{id}"
     original_url = str(url.url)
-    
+
     try:
         record = RecordUrl(
             id=id,
@@ -32,7 +32,7 @@ async def create_object_in_db_mongo(url: OriginalUrl, url_collection) -> str:
             clicks=0,
         )
     except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise DatabaseError(str(e))
 
     await url_collection.insert_one(record.model_dump())
 
@@ -45,7 +45,7 @@ async def get_object_from_db_mongo(id: str, url_collection) -> RecordUrl:
     if url_data:
         return RecordUrl(**url_data)
 
-    raise HTTPException(status_code=404, detail="URL not found")
+    raise UrlNotFound("The field for the specified ID was not found in the database")
 
 
 async def increase_the_number_of_clicks(id: str, url_collection) -> RecordUrl:
@@ -53,14 +53,38 @@ async def increase_the_number_of_clicks(id: str, url_collection) -> RecordUrl:
 
     if url_data:
         try:
-            clicks = url_data["clicks"] + 1
-            await url_collection.update_one({"id": id}, {"$set": {"clicks": clicks}})
-
+            await url_collection.update_one({"id": id}, {"$inc": {"clicks": 1}})
             return RecordUrl(**url_data)
         except ValidationError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise DatabaseError(str(e))
+    raise UrlNotFound("The field for the specified ID was not found in the database")
 
-    raise HTTPException(status_code=404, detail="URL not found")
+
+async def record_utm_marks(id: str, url_collection, utm: Utm) -> RecordUrl:
+    url_data = await url_collection.find_one({"id": id})
+
+    if url_data:
+        try:
+            existing_mark = next((mark for mark in url_data.get("utm_marks", []) if mark["utm_name"] == utm.name), None)
+
+            if existing_mark:
+                await url_collection.update_one(
+                    {"id": id, "utm_marks.utm_name": utm.name},
+                    {"$inc": {"utm_marks.$.clicks": 1}}
+                )
+            else:
+                await url_collection.update_one(
+                    {"id": id},
+                    {"$push": {"utm_marks": {"utm_name": utm.name, "clicks": 1}}}
+                )
+
+            updated_url_data = await url_collection.find_one({"id": id})
+            return RecordUrl(**updated_url_data)
+
+        except ValidationError as e:
+            raise DatabaseError(str(e))
+
+    raise UrlNotFound("The field for the specified ID was not found in the database")
 
 
 async def get_all_objects_from_db_mongo(url_collection) -> list[RecordUrl]:

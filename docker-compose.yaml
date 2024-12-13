@@ -9,7 +9,8 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file: .env
     restart: always
     networks:
@@ -29,6 +30,11 @@ services:
       # - ./db/mongod.conf:/etc/mongo/mongod.conf
     # command: [ "mongod", "--config", "/etc/mongo/mongod.conf" ]
     command: ["mongod", "--quiet"]
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - app-network
 

@@ -7,22 +7,15 @@ class OriginalUrl(BaseModel):
     url: HttpUrl
 
 
+class Utm(BaseModel):
+    name: str
+    clicks: int
+
+
 class RecordUrl(BaseModel):
     id: str
     original_url: str
     short_url: str
     created_at: datetime.datetime
     clicks: int = Field(default=0, ge=0)
-    utm_source: Optional[str] = None
-    utm_medium: Optional[str] = None
-    utm_campaign: Optional[str] = None
-    utm_term: Optional[str] = None
-    utm_content: Optional[str] = None 
-
-
-class Utm(BaseModel):
-    utm_source: Optional[str] = None
-    utm_medium: Optional[str] = None
-    utm_campaign: Optional[str] = None
-    utm_term: Optional[str] = None
-    utm_content: Optional[str] = None
+    utm_tags: Optional[list[Utm]] = Field(default_factory=list)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Path, Body
+from fastapi import APIRouter, BackgroundTasks, Request, Path, Body
 from fastapi.responses import RedirectResponse
 from fastapi.exceptions import HTTPException
 
@@ -10,7 +10,10 @@ from db.db import (
     get_object_from_db_mongo,
     get_all_objects_from_db_mongo,
     increase_the_number_of_clicks,
+    record_utm_marks,
 )
+
+from utm_marks_collector.utm_marks_collector import handle_utm_marks
 
 from settings.settings import DEBUG
 
@@ -30,6 +33,7 @@ async def create_short_url(
 @router.get("/{id}")
 async def get_short_url(
     request: Request,
+    background_tasks: BackgroundTasks,
     id: str = Path(..., description="The ID of the short URL")
 ) -> RedirectResponse:
     try:
@@ -37,8 +41,8 @@ async def get_short_url(
     except UrlNotFound as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    query_params = request.query_params
     await increase_the_number_of_clicks(id, url_collection)
+    await handle_utm_marks(request, id, url_collection, background_tasks)
 
     return RedirectResponse(url=url_data.original_url)
 

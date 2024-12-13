@@ -3,7 +3,7 @@ import datetime
 from pydantic import ValidationError
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from models.models import OriginalUrl, RecordUrl
+from models.models import OriginalUrl, RecordUrl, Utm
 from settings.settings import HOSTNAME, MONGO_HOST
 from random_ids.random_ids import create_unique_id
 from exceptions.exceptions import DatabaseError, UrlNotFound
@@ -54,10 +54,36 @@ async def increase_the_number_of_clicks(id: str, url_collection) -> RecordUrl:
     if url_data:
         try:
             await url_collection.update_one({"id": id}, {"$inc": {"clicks": 1}})
-
             return RecordUrl(**url_data)
         except ValidationError as e:
             raise DatabaseError(str(e))
+    raise UrlNotFound("The field for the specified ID was not found in the database")
+
+
+async def record_utm_marks(id: str, url_collection, utm: Utm) -> RecordUrl:
+    url_data = await url_collection.find_one({"id": id})
+
+    if url_data:
+        try:
+            existing_mark = next((mark for mark in url_data.get("utm_marks", []) if mark["utm_name"] == utm.name), None)
+
+            if existing_mark:
+                await url_collection.update_one(
+                    {"id": id, "utm_marks.utm_name": utm.name},
+                    {"$inc": {"utm_marks.$.clicks": 1}}
+                )
+            else:
+                await url_collection.update_one(
+                    {"id": id},
+                    {"$push": {"utm_marks": {"utm_name": utm.name, "clicks": 1}}}
+                )
+
+            updated_url_data = await url_collection.find_one({"id": id})
+            return RecordUrl(**updated_url_data)
+
+        except ValidationError as e:
+            raise DatabaseError(str(e))
+
     raise UrlNotFound("The field for the specified ID was not found in the database")
 
 
